@@ -1,0 +1,4 @@
+(executable
+ (public_name functional_data_structures_with_effect)
+ (name main)
+ (libraries functional_data_structures_with_effect))

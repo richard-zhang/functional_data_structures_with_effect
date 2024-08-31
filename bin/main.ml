@@ -1,0 +1,1 @@
+let () =  Functional_data_structures_with_effect.Lazy.main ()

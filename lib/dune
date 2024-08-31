@@ -1,0 +1,4 @@
+(library
+ (name functional_data_structures_with_effect)
+ (inline_tests)
+  (preprocess (pps ppx_inline_test)))
