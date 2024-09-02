@@ -51,6 +51,23 @@ let nth_prime n =
 let force susp = perform (Force susp)
 let suspend f a = perform (Suspend (f, a))
 
+let suspend_2 f a b = perform (Suspend ((fun b -> f a b), b))
+let suspend_3 f a b c = perform (Suspend ((fun c -> f a b c), c))
+
+(*
+lazy is monad
+Maybe even comonad 
+due to coreturn m a -> a
+cobind 
+*)
+let fmap f susp_a = suspend (fun susp_a -> let a = force susp_a in f a) susp_a
+let return a = suspend Fun.id a
+let (let*) susp_a a_susp_b = suspend (fun susp_a -> let a = force susp_a in force (a_susp_b a)) susp_a
+
+let plus (x_susp, y_susp) = suspend (fun () ->  force x_susp + force y_susp) ()
+let extract = force
+let extend (f : 'a susp -> 'b) (susp_a : 'a susp) = suspend f susp_a
+
 let example () =
   print_newline ();
   let s = suspend nth_prime 10003 in
@@ -87,6 +104,6 @@ let run f =
                   continue k v)
           | _ -> None);
     }
-let main = run example
+let main () = run example
 
 let%test_unit "lazy example: memorised prime" = run example
