@@ -169,8 +169,63 @@ module BinomialHeap : Interface.Heap = struct
     merge (t |> children |> List.rev) tree
 end
 
+module BinomialHeap2 = struct
+  type 'a tree = Node of 'a * 'a tree list
+
+  (* ascending order *)
+  type 'a t = (int * 'a tree) list
+
+  (* link two tree, precondition thost tow tree has the same rank *)
+  let link (Node (left_value, left_children) as left)
+      (Node (right_value, right_children) as right) =
+    if left_value <= right_value then Node (left_value, right :: left_children)
+    else Node (right_value, left :: right_children)
+
+  let empty = []
+  let is_empty = List.is_empty
+
+  let single_tree a =
+    let single_node = Node (a, []) in
+    [ (1, single_node) ]
+
+  let rec merge left right =
+    match (left, right) with
+    | [], _ -> right
+    | _, [] -> left
+    | left_head :: left_tail, right_head :: right_tail ->
+        let left_head_rank = fst left_head in
+        let right_head_rank = fst right_head in
+        if left_head_rank = right_head_rank then
+          let new_tree =
+            (left_head_rank + 1, link (snd left_head) (snd right_head))
+          in
+          merge [ new_tree ] (merge left_tail right_tail)
+        else if left_head_rank < right_head_rank then
+          left_head :: merge left_tail right
+        else right_head :: merge left right_tail
+
+  let insert value tree = merge (single_tree value) tree
+  let get_value (_, Node (value, _)) = value
+
+  let rec extract_min_and_rest_tree = function
+    | [] -> failwith "empty value"
+    | [ x ] -> (x, [])
+    | head :: rest ->
+        let possible_min, possible_rest = extract_min_and_rest_tree rest in
+        if get_value possible_min < get_value head then
+          (possible_min, head :: possible_rest)
+        else (head, rest)
+
+  let find_min x = x |> extract_min_and_rest_tree |> fst |> get_value
+
+  let delete_min x =
+    let (rank, Node (_, children)), rest = extract_min_and_rest_tree x in
+    merge rest (children |> List.mapi (fun i a -> (rank - 1 - i, a)) |> List.rev)
+end
+
 let%test_unit "test heap" =
   smoke_test_heap "leftist heap" (module LeftistHeap);
   smoke_test_heap "weight balanced heap" (module WeightLeftistHeap);
   smoke_test_heap "ExplicitMin heap" (module ExplicitMin (WeightLeftistHeap));
-  smoke_test_heap "Binomial heap" (module BinomialHeap)
+  smoke_test_heap "Binomial heap" (module BinomialHeap);
+  smoke_test_heap "Binomial heap 2" (module BinomialHeap2)
